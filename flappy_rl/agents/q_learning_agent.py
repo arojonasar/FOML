@@ -10,12 +10,11 @@ n_bins = 15 # Used for position binning
 learning_rate = 0.1
 epsilon = 0.1
 discount_factor = 0.9
-epochs = 1000 # Number of training episodes
-
+epochs = 5000 # Number of training episodes
 Q_table = np.zeros((n_states, n_actions))
 
 game = FlappyBird()
-env = PLE(game, fps=30, display_screen=True)
+env = PLE(game, fps=30, display_screen=False)
 env.init()
 
 def clip(val):
@@ -34,6 +33,8 @@ def get_discrete_state(state):
             vel_bin) 
 
 rewards = []
+actions = env.getActionSet() # Get the available actions (press spacebar or do nothing)
+
 for epoch in range(epochs):
     env.reset_game()
     total_reward = 0
@@ -46,14 +47,9 @@ for epoch in range(epochs):
         else:
             action = np.argmax(Q_table[state]) # Exploit: choose the action with the highest Q-value
 
-        reward = env.act(action)
-        if env.game_over():
-            reward = -5
-        else:
-            reward = 1
-
-        total_reward += reward
-        next_state = get_discrete_state(env.getGameState())
+        reward = env.act(actions[action]) # Take the action
+        total_reward += reward 
+        next_state = get_discrete_state(env.getGameState()) 
 
         Q_table[state, action] += learning_rate * (
             reward + discount_factor * np.max(Q_table[next_state]) - Q_table[state, action]
@@ -62,7 +58,6 @@ for epoch in range(epochs):
     print(f"Episode {epoch + 1}: Total reward = {total_reward}")
     rewards.append(total_reward)
 
-print(rewards)
 plt.plot(rewards)
 plt.xlabel('Episode')
 plt.ylabel('Total Reward')

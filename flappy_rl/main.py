@@ -2,6 +2,7 @@ import os
 import glob
 import torch
 import random
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -10,15 +11,14 @@ from collections import deque
 from ple import PLE
 from ple.games.flappybird import FlappyBird
 
-# Hyperparameters
-learning_rate = 0.0001 #0.01 -> 0.0001
+learning_rate = 0.001
 initial_epsilon = 1.0  
-min_epsilon = 0.05    
-epsilon_decay = 0.999995 #0.99 -> 0.999
-discount_factor = 0.99 #0.9 -> 0.99
+min_epsilon = 0.1 
+epsilon_decay = 0.999 
+discount_factor = 0.99
 epochs = 5000
-max_replay_size = 50000 #1000 -> 50000
-batch_size = 32
+max_replay_size = 50000
+batch_size = 100
 target_update_freq = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,12 +44,12 @@ class DQN(nn.Module):
         self.fc1 = nn.Linear(4, 100)
         self.fc2 = nn.Linear(100, 10)
         self.fc3 = nn.Linear(10, 2)
-        #sigmoid -> LEAKY
-        self.leaky = nn.LeakyReLU()
+        #change these 
+        self.sig = nn.Sigmoid()
 
     def forward(self, x):
-        x = self.leaky(self.fc1(x))
-        x = self.leaky(self.fc2(x))
+        x = self.sig(self.fc1(x))
+        x = self.sig(self.fc2(x))
         return self.fc3(x)
 
 main_model = DQN().to(device)
@@ -70,6 +70,7 @@ for file in glob.glob("flappy_dqn_episode_*.pth"):
     os.remove(file)
 print("Old model checkpoints deleted.")
 
+start = time.time()
 for episode in range(epochs):
     env.reset_game()
     total_reward = 0
@@ -84,8 +85,10 @@ for episode in range(epochs):
                 action = int(torch.argmax(main_model(state)).item())
 
         reward = env.act(actions[action])
-        reward = np.clip(reward, -1, 1)
-        total_reward += reward
+        if env.game_over():
+            reward = -5  
+        elif reward > 0:  
+            reward = 1  
 
         next_state_np = normalize_state(env.getGameState())
         done = env.game_over()
@@ -132,7 +135,8 @@ for episode in range(epochs):
     if (episode + 1) % 500 == 0:
         torch.save(main_model.state_dict(), f"flappy_dqn_episode_{episode+1}.pth")
 
-# Plot the episode rewards over time
+end = time.time()
+print(end - start)
 plt.plot(episode_rewards)
 plt.xlabel('Episode')
 plt.ylabel('Total Reward')

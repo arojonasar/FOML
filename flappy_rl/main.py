@@ -41,15 +41,14 @@ def normalize_state(state):
 class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
-        self.fc1 = nn.Linear(4, 100)
-        self.fc2 = nn.Linear(100, 10)
-        self.fc3 = nn.Linear(10, 2)
-        #change these 
-        self.sig = nn.Sigmoid()
+        self.fc1 = nn.Linear(4, 128) 
+        self.fc2 = nn.Linear(128, 64) 
+        self.fc3 = nn.Linear(64, 2) 
+        self.relu = nn.ReLU()
 
     def forward(self, x):
-        x = self.sig(self.fc1(x))
-        x = self.sig(self.fc2(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
         return self.fc3(x)
 
 main_model = DQN().to(device)

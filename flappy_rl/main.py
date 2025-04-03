@@ -11,7 +11,7 @@ from collections import deque
 from ple import PLE
 from ple.games.flappybird import FlappyBird
 
-learning_rate = 0.001
+learning_rate = 0.0001
 initial_epsilon = 1.0  
 min_epsilon = 0.1 
 epsilon_decay = 0.999 
@@ -85,10 +85,8 @@ for episode in range(epochs):
                 action = int(torch.argmax(main_model(state)).item())
 
         reward = env.act(actions[action])
-        if env.game_over():
-            reward = -5  
-        elif reward > 0:  
-            reward = 1  
+        reward = np.clip(reward, -5, 1)
+        total_reward += reward
 
         next_state_np = normalize_state(env.getGameState())
         done = env.game_over()

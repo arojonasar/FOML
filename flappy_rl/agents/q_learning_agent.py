@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 from ple import PLE
 from ple.games.flappybird import FlappyBird
 
-n_states = 15 * 15 * 15 * 5 # Total number of discrete states (player_y, next_pipe_top_y, next_pipe_dist_to_player, player_vel)
+n_states = 15 * 15 * 15 * 19 # Total number of discrete states (player_y, next_pipe_top_y, next_pipe_dist_to_player, player_vel)
 n_actions = 2 # The actions are either 0 (flap the wings) or 1 (do nothing)
 n_bins = 15 # Used for position binning
 
 learning_rate = 0.1
 epsilon = 0.1
-discount_factor = 0.9
+discount_factor = 1
 epochs = 5000 # Number of training episodes
 Q_table = np.zeros((n_states, n_actions))
 
@@ -18,19 +18,17 @@ env = PLE(game, fps=30, display_screen=False)
 env.init()
 
 def clip(val):
-    # Clip the value to the range [0, 40]
-    return min(max(int(val / 40), 0), 14)
+    return int(np.clip(val / 30, 0, 14))
 
 def get_discrete_state(state):
     player_y = clip(state['player_y']) # The y position of the bird
     next_pipe_top_y = clip(state['next_pipe_top_y']) # The top y position of the next gap
     next_pipe_dist_to_player = clip(state['next_pipe_dist_to_player']) # The horizontal distance between bird and next pipe
     player_vel = min(max(state['player_vel'] + 8, 0), 18) # The current vertical velocity of the bird - shift from [-8,10] to [0,18]
-    vel_bin = min(int(player_vel / 4), 4) # The velocity is divided into 5 bins (0-4)
-    return (player_y * 15 * 15 * 5 +
-            next_pipe_top_y * 15 * 5 + 
-            next_pipe_dist_to_player * 5 + 
-            vel_bin) 
+    return int(player_y * 15 * 15 * 19 +
+            next_pipe_top_y * 15 * 19 + 
+            next_pipe_dist_to_player * 19 + 
+            player_vel) 
 
 rewards = []
 actions = env.getActionSet() # Get the available actions (press spacebar or do nothing)
